@@ -2,6 +2,12 @@
 
 A drag-and-drop visual editor for designing conversational and logic flows, built with React, TypeScript, and [@xyflow/react](https://reactflow.dev/).
 
+## Screenshots
+
+| Light | Dark |
+| ----- | ---- |
+| ![Flow Builder — light mode](docs/screenshots/light.png) | ![Flow Builder — dark mode](docs/screenshots/dark.png) |
+
 ## Features
 
 - **Six node types** — Start, Message, Condition, Input, API Call, and End
