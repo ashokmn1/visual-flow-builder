@@ -1,14 +1,31 @@
-import { Box, Drawer, Typography, IconButton, Divider } from '@mui/material';
+import { lazy, Suspense } from 'react';
+import {
+  Box,
+  Drawer,
+  Typography,
+  IconButton,
+  Divider,
+  CircularProgress,
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useFlowStore } from '../../store/flowStore';
 import { NODE_COLORS } from '../../constants/nodeDefaults';
 import type { NodeCategory } from '../../types/nodes';
-import StartConfig from './StartConfig';
-import MessageConfig from './MessageConfig';
-import ConditionConfig from './ConditionConfig';
-import InputConfig from './InputConfig';
-import ApiCallConfig from './ApiCallConfig';
-import EndConfig from './EndConfig';
+
+// Only one config panel is visible at a time, so each one is split into its
+// own chunk and fetched on first use.
+const StartConfig = lazy(() => import('./StartConfig'));
+const MessageConfig = lazy(() => import('./MessageConfig'));
+const ConditionConfig = lazy(() => import('./ConditionConfig'));
+const InputConfig = lazy(() => import('./InputConfig'));
+const ApiCallConfig = lazy(() => import('./ApiCallConfig'));
+const EndConfig = lazy(() => import('./EndConfig'));
+
+const ConfigFallback = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+    <CircularProgress size={24} />
+  </Box>
+);
 
 const DRAWER_WIDTH = 300;
 
@@ -84,7 +101,7 @@ const ConfigPanel = () => {
             {selectedNode?.data.type
               ? selectedNode.data.type.charAt(0).toUpperCase() +
                 selectedNode.data.type.slice(1)
-              : ''}{' '}
+              : ''}
             Node
           </Typography>
         </Box>
@@ -96,7 +113,7 @@ const ConfigPanel = () => {
       <Divider />
 
       <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
-        {renderConfig()}
+        <Suspense fallback={<ConfigFallback />}>{renderConfig()}</Suspense>
       </Box>
     </Drawer>
   );
