@@ -2,7 +2,6 @@ import type { DragEvent } from 'react';
 import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import styled from 'styled-components';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ChatBubbleOutlinedIcon from '@mui/icons-material/ChatBubbleOutlined';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import InputIcon from '@mui/icons-material/Input';
@@ -53,7 +52,6 @@ const IconWrapper = styled.div<{ $color: string }>`
 `;
 
 const NODE_ICONS: Record<NodeCategory, React.ReactNode> = {
-  start: <PlayArrowIcon sx={{ fontSize: 18 }} />,
   message: <ChatBubbleOutlinedIcon sx={{ fontSize: 18 }} />,
   condition: <AccountTreeIcon sx={{ fontSize: 18 }} />,
   input: <InputIcon sx={{ fontSize: 18 }} />,
@@ -62,7 +60,6 @@ const NODE_ICONS: Record<NodeCategory, React.ReactNode> = {
 };
 
 const nodeCategories: NodeCategory[] = [
-  'start',
   'message',
   'condition',
   'input',

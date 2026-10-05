@@ -3,7 +3,8 @@ import { Handle, Position } from '@xyflow/react';
 import styled from 'styled-components';
 import { IconButton, Tooltip } from '@mui/material';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
-import { NODE_COLORS } from '../../constants/nodeDefaults';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { NODE_COLORS, START_COLOR } from '../../constants/nodeDefaults';
 import type { NodeCategory } from '../../types/nodes';
 import { useFlowStore } from '../../store/flowStore';
 
@@ -63,6 +64,27 @@ const NodeBody = styled.div`
   color: var(--node-text, #334155);
 `;
 
+const StartChip = styled.div`
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: 999px;
+  background: ${START_COLOR};
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px ${START_COLOR}55;
+  pointer-events: none;
+`;
+
 const HandleLabel = styled.div`
   position: absolute;
   font-size: 9px;
@@ -83,6 +105,9 @@ const BaseNode = ({
 }: BaseNodeProps) => {
   const color = NODE_COLORS[nodeType];
   const deleteNode = useFlowStore((s) => s.deleteNode);
+  const isStart = useFlowStore(
+    (s) => s.nodes.find((n) => n.id === id)?.data.isStart === true
+  );
 
   const getHandleLeft = (position?: string, index?: number, total?: number) => {
     if (total && total > 1 && index !== undefined) {
@@ -100,6 +125,12 @@ const BaseNode = ({
 
   return (
     <NodeWrapper $color={color} $selected={selected}>
+      {isStart && (
+        <StartChip>
+          <PlayArrowIcon sx={{ fontSize: 12 }} />
+          Start here
+        </StartChip>
+      )}
       {targetHandle && (
         <Handle
           type="target"
@@ -116,7 +147,7 @@ const BaseNode = ({
       <NodeHeader $color={color}>
         {icon}
         <HeaderLabel>{label}</HeaderLabel>
-        {nodeType !== 'start' && (
+        {!isStart && (
           <Tooltip title="Delete node" placement="top">
             <IconButton
               size="small"

@@ -11,6 +11,29 @@ import {
 } from '@xyflow/react';
 import type { FlowNode, FlowNodeData } from '../types/nodes';
 
+export const isStartNode = (node: FlowNode) => node.data.isStart === true;
+
+const normalizeStart = (nodes: FlowNode[], preferredId?: string): FlowNode[] => {
+  if (nodes.length === 0) return nodes;
+  const startId =
+    (preferredId && nodes.some((n) => n.id === preferredId) && preferredId) ||
+    nodes.find(isStartNode)?.id ||
+    nodes[0].id;
+
+  return nodes.map((node) => {
+    const isStart = node.id === startId;
+    const deletable = !isStart;
+    if ((node.data.isStart ?? false) === isStart && (node.deletable ?? true) === deletable) {
+      return node;
+    }
+    return {
+      ...node,
+      deletable,
+      data: { ...node.data, isStart } as FlowNodeData,
+    };
+  });
+};
+
 interface FlowState {
   nodes: FlowNode[];
   edges: Edge[];
@@ -24,6 +47,8 @@ interface FlowState {
   addNode: (node: FlowNode) => void;
   deleteNode: (nodeId: string) => void;
   updateNodeData: (nodeId: string, data: Partial<FlowNodeData>) => void;
+  /** Move the "Start here" chip to the given node. */
+  setStartNode: (nodeId: string) => void;
 
   setSelectedNode: (nodeId: string | null) => void;
   toggleTheme: () => void;
@@ -40,8 +65,14 @@ export const useFlowStore = create<FlowState>()(
         (localStorage.getItem('theme') as 'light' | 'dark') || 'light',
 
       onNodesChange: (changes) => {
+        const { nodes } = get();
+        const startIds = new Set(nodes.filter(isStartNode).map((n) => n.id));
+        // Backspace/Delete on the selected start node must not remove it.
+        const safeChanges = changes.filter(
+          (change) => !(change.type === 'remove' && startIds.has(change.id))
+        );
         set({
-          nodes: applyNodeChanges(changes, get().nodes) as FlowNode[],
+          nodes: applyNodeChanges(safeChanges, nodes) as FlowNode[],
         });
       },
 
@@ -61,10 +92,13 @@ export const useFlowStore = create<FlowState>()(
       },
 
       addNode: (node) => {
-        set({ nodes: [...get().nodes, node] });
+        // The first node dropped on an empty canvas becomes the start.
+        set({ nodes: normalizeStart([...get().nodes, node]) });
       },
 
       deleteNode: (nodeId) => {
+        const target = get().nodes.find((n) => n.id === nodeId);
+        if (!target || isStartNode(target)) return;
         set({
           nodes: get().nodes.filter((n) => n.id !== nodeId),
           edges: get().edges.filter(
@@ -76,13 +110,20 @@ export const useFlowStore = create<FlowState>()(
       },
 
       updateNodeData: (nodeId, data) => {
+        // `isStart` is managed exclusively through setStartNode.
+        const { isStart: _ignored, ...rest } = data;
+        void _ignored;
         set({
           nodes: get().nodes.map((node) =>
             node.id === nodeId
-              ? { ...node, data: { ...node.data, ...data } as FlowNodeData }
+              ? { ...node, data: { ...node.data, ...rest } as FlowNodeData }
               : node
           ),
         });
+      },
+
+      setStartNode: (nodeId) => {
+        set({ nodes: normalizeStart(get().nodes, nodeId) });
       },
 
       setSelectedNode: (nodeId) => {
@@ -96,7 +137,7 @@ export const useFlowStore = create<FlowState>()(
       },
 
       setFlow: (nodes, edges) => {
-        set({ nodes, edges, selectedNodeId: null });
+        set({ nodes: normalizeStart(nodes), edges, selectedNodeId: null });
       },
     }),
     {

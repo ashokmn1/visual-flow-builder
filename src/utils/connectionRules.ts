@@ -5,10 +5,6 @@ const CONNECTION_RULES: Record<
   NodeCategory,
   { canConnectTo: NodeCategory[]; maxOutgoing: number }
 > = {
-  start: {
-    canConnectTo: ['message', 'condition', 'input', 'apiCall'],
-    maxOutgoing: 1,
-  },
   message: {
     canConnectTo: ['message', 'condition', 'input', 'apiCall', 'end'],
     maxOutgoing: 1,
@@ -69,9 +65,6 @@ export const isValidConnection = (
     (e) => e.source === sourceId && e.target === targetId
   );
   if (duplicate) return false;
-
-  // Prevent connecting to Start node
-  if (targetType === 'start') return false;
 
   return true;
 };

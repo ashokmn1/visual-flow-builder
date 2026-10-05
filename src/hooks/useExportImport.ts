@@ -10,24 +10,56 @@ interface FlowJSON {
   edges: Edge[];
 }
 
-const VALID_NODE_TYPES = ['start', 'message', 'condition', 'input', 'apiCall', 'end'];
+const VALID_NODE_TYPES = ['message', 'condition', 'input', 'apiCall', 'end'];
+const LEGACY_START_TYPE = 'start';
 
-const validateFlow = (data: unknown): data is FlowJSON => {
-  if (!data || typeof data !== 'object') return false;
+type ValidationResult = { ok: true; flow: FlowJSON } | { ok: false; error: string };
+
+const validateFlow = (data: unknown): ValidationResult => {
+  const invalid = { ok: false as const, error: 'Invalid flow file. Please check the JSON format.' };
+  if (!data || typeof data !== 'object') return invalid;
   const flow = data as FlowJSON;
-  if (!Array.isArray(flow.nodes) || !Array.isArray(flow.edges)) return false;
+  if (!Array.isArray(flow.nodes) || !Array.isArray(flow.edges)) return invalid;
 
   for (const node of flow.nodes) {
-    if (!node.id || !node.type || !VALID_NODE_TYPES.includes(node.type)) return false;
-    if (!node.position || typeof node.position.x !== 'number' || typeof node.position.y !== 'number') return false;
-    if (!node.data || !node.data.type || !node.data.label) return false;
+    if (!node.id || !node.type) return invalid;
+    if (node.type !== LEGACY_START_TYPE && !VALID_NODE_TYPES.includes(node.type)) return invalid;
+    if (!node.position || typeof node.position.x !== 'number' || typeof node.position.y !== 'number') return invalid;
+    if (!node.data || !node.data.type || !node.data.label) return invalid;
   }
 
   for (const edge of flow.edges) {
-    if (!edge.id || !edge.source || !edge.target) return false;
+    if (!edge.id || !edge.source || !edge.target) return invalid;
   }
 
-  return true;
+  const migrated = migrateLegacyStartNodes(flow);
+  if (migrated.nodes.length === 0) {
+    return { ok: false, error: 'Invalid flow: a flow must contain at least one node.' };
+  }
+
+  return { ok: true, flow: migrated };
+};
+
+/**
+ * Older exports had a dedicated Start node. Replace it with the "Start here"
+ * flag on the node it pointed to and drop the node and its edges.
+ */
+const migrateLegacyStartNodes = (flow: FlowJSON): FlowJSON => {
+  const legacyIds = new Set(
+    flow.nodes.filter((n) => n.type === LEGACY_START_TYPE).map((n) => n.id)
+  );
+  if (legacyIds.size === 0) return flow;
+
+  const firstTarget = flow.edges.find((e) => legacyIds.has(e.source))?.target;
+  const nodes = flow.nodes
+    .filter((n) => !legacyIds.has(n.id))
+    .map((n) =>
+      n.id === firstTarget ? { ...n, data: { ...n.data, isStart: true } } : n
+    );
+  const edges = flow.edges.filter(
+    (e) => !legacyIds.has(e.source) && !legacyIds.has(e.target)
+  );
+  return { ...flow, nodes, edges };
 };
 
 export const useExportImport = () => {
@@ -62,10 +94,11 @@ export const useExportImport = () => {
       reader.onload = (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
-          if (validateFlow(data)) {
-            setFlow(data.nodes, data.edges);
+          const result = validateFlow(data);
+          if (result.ok) {
+            setFlow(result.flow.nodes, result.flow.edges);
           } else {
-            alert('Invalid flow file. Please check the JSON format.');
+            alert(result.error);
           }
         } catch {
           alert('Failed to parse JSON file.');

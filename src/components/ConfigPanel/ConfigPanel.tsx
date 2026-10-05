@@ -3,7 +3,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useFlowStore } from '../../store/flowStore';
 import { NODE_COLORS } from '../../constants/nodeDefaults';
 import type { NodeCategory } from '../../types/nodes';
-import StartConfig from './StartConfig';
+import StartHereToggle from './StartHereToggle';
 import MessageConfig from './MessageConfig';
 import ConditionConfig from './ConditionConfig';
 import InputConfig from './InputConfig';
@@ -24,8 +24,6 @@ const ConfigPanel = () => {
     if (!selectedNode) return null;
 
     switch (selectedNode.data.type) {
-      case 'start':
-        return <StartConfig node={selectedNode} />;
       case 'message':
         return <MessageConfig node={selectedNode} />;
       case 'condition':
@@ -95,7 +93,17 @@ const ConfigPanel = () => {
 
       <Divider />
 
-      <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
+      <Box
+        sx={{
+          p: 2,
+          overflowY: 'auto',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        {selectedNode && <StartHereToggle node={selectedNode} />}
         {renderConfig()}
       </Box>
     </Drawer>
