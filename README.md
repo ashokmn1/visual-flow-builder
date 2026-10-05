@@ -49,6 +49,26 @@ Then open the URL printed by Vite (typically http://localhost:5173).
 - `npm run lint` — run ESLint
 - `npm run test` — run the interpreter unit tests with Vitest
 
+## Deployment
+
+The app is a static Vite build and deploys to [Vercel](https://vercel.com) with zero server config. [vercel.json](vercel.json) pins the framework preset, rewrites all non-asset routes to `index.html` (SPA fallback), and sets immutable caching on hashed `/assets/*` files.
+
+**Option A — Git integration (recommended):**
+
+1. Push this repo to GitHub.
+2. In Vercel, click **Add New → Project** and import the repo.
+3. Vercel auto-detects Vite; leave Build Command (`npm run build`) and Output Directory (`dist`) as-is. Click **Deploy**.
+4. Every push to `main` becomes a production deploy; every PR gets a preview URL.
+
+**Option B — Vercel CLI:**
+
+```bash
+npm i -g vercel
+vercel login
+vercel          # first run links the project and creates a preview deploy
+vercel --prod   # production deploy
+```
+
 ## Project Structure
 
 ```
