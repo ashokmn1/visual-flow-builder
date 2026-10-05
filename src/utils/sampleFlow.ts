@@ -44,11 +44,11 @@ export const sampleNodes: FlowNode[] = [
     data: {
       type: 'apiCall',
       label: 'Fetch Account',
-      url: 'https://api.example.com/billing',
+      url: 'https://jsonplaceholder.typicode.com/users/1',
       method: 'GET' as const,
       headers: '',
       body: '',
-      responseVariable: 'billing_info',
+      responseVariable: 'account',
     },
   },
   {
@@ -62,9 +62,20 @@ export const sampleNodes: FlowNode[] = [
     },
   },
   {
+    id: 'msg-3',
+    type: 'message',
+    position: { x: 80, y: 830 },
+    data: {
+      type: 'message',
+      label: 'Account Found',
+      message:
+        "Thanks {{account.name}}! I've pulled up your account and will send the billing details to {{account.email}}.",
+    },
+  },
+  {
     id: 'end-1',
     type: 'end',
-    position: { x: 300, y: 830 },
+    position: { x: 300, y: 1010 },
     data: {
       type: 'end',
       label: 'End',
@@ -103,10 +114,24 @@ export const sampleEdges: Edge[] = [
     type: 'animated',
   },
   {
-    id: 'e-api-end',
+    id: 'e-api-msg3',
     source: 'api-1',
-    target: 'end-1',
+    target: 'msg-3',
     sourceHandle: 'success',
+    type: 'animated',
+  },
+  {
+    id: 'e-api-msg2',
+    source: 'api-1',
+    target: 'msg-2',
+    sourceHandle: 'failure',
+    type: 'animated',
+  },
+  {
+    id: 'e-msg3-end',
+    source: 'msg-3',
+    target: 'end-1',
+    sourceHandle: 'default',
     type: 'animated',
   },
   {

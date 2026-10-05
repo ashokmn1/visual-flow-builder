@@ -1,4 +1,4 @@
-import { useCallback, type DragEvent } from "react";
+import { useCallback, useEffect, type DragEvent } from "react";
 import {
   ReactFlow,
   MiniMap,
@@ -6,6 +6,7 @@ import {
   Background,
   BackgroundVariant,
   useReactFlow,
+  useStore,
   type Connection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -13,6 +14,7 @@ import { useTheme } from "@mui/material/styles";
 import { nodeTypes } from "../CustomNodes/nodeTypes";
 import { edgeTypes } from "../CustomEdges/edgeTypes";
 import { useFlowStore } from "../../store/flowStore";
+import { useRunStore } from "../../store/runStore";
 import { NODE_DEFAULTS, NODE_COLORS } from "../../constants/nodeDefaults";
 import { isValidConnection } from "../../utils/connectionRules";
 import { generateId } from "../../utils/idGenerator";
@@ -21,7 +23,11 @@ import type { FlowNode, NodeCategory } from "../../types/nodes";
 
 const FlowCanvas = () => {
   const theme = useTheme();
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getInternalNode, getViewport, setCenter } =
+    useReactFlow();
+  const viewportWidth = useStore((s) => s.width);
+  const viewportHeight = useStore((s) => s.height);
+  const activeNodeId = useRunStore((s) => s.activeNodeId);
 
   const nodes = useFlowStore((s) => s.nodes);
   const edges = useFlowStore((s) => s.edges);
@@ -30,6 +36,31 @@ const FlowCanvas = () => {
   const onConnect = useFlowStore((s) => s.onConnect);
   const addNode = useFlowStore((s) => s.addNode);
   const setSelectedNode = useFlowStore((s) => s.setSelectedNode);
+
+  // Keep the executing node in view during a run without fighting the user:
+  // only pan when the node has left the visible area.
+  useEffect(() => {
+    if (!activeNodeId) return;
+    const node = getInternalNode(activeNodeId);
+    if (!node) return;
+    const { x, y, zoom } = getViewport();
+    const width = node.measured.width ?? 220;
+    const height = node.measured.height ?? 100;
+    const left = node.internals.positionAbsolute.x * zoom + x;
+    const top = node.internals.positionAbsolute.y * zoom + y;
+    const margin = 24;
+    const inView =
+      left >= margin &&
+      top >= margin &&
+      left + width * zoom <= viewportWidth - margin &&
+      top + height * zoom <= viewportHeight - margin;
+    if (inView) return;
+    void setCenter(
+      node.internals.positionAbsolute.x + width / 2,
+      node.internals.positionAbsolute.y + height / 2,
+      { zoom, duration: 500 },
+    );
+  }, [activeNodeId, getInternalNode, getViewport, setCenter, viewportWidth, viewportHeight]);
 
   const handleConnect = useCallback(
     (connection: Connection) => {

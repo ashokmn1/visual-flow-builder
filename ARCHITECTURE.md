@@ -97,7 +97,22 @@ A right-side drawer that opens when `selectedNodeId` is set. `ConfigPanel.tsx` s
 
 ### [src/components/Toolbar/Toolbar.tsx](src/components/Toolbar/Toolbar.tsx)
 
-App bar with undo/redo, import/export, and theme toggle. Reads temporal state via `useTemporalStore` to enable/disable undo/redo buttons.
+App bar with undo/redo, import/export, the **Run** toggle, and theme toggle. Reads temporal state via `useTemporalStore` to enable/disable undo/redo buttons.
+
+### [src/engine/](src/engine/)
+
+The flow interpreter. It has no React or store imports so it can be unit tested in isolation ([interpreter.test.ts](src/engine/interpreter.test.ts)).
+
+- [interpreter.ts](src/engine/interpreter.ts) — `FlowInterpreter` takes a snapshot of `nodes` / `edges` and exposes `start()`, `submitInput(text)`, `stop()`, and `subscribe(listener)`. Execution is an async loop: each node either emits events and advances along an edge, pauses (`Input`), or terminates (`End`, dead end, error). Events are a discriminated union (`enterNode`, `traverseEdge`, `botMessage`, `userMessage`, `system`, `variables`, `waitingForInput`, `finished`, `error`, `status`). A generation counter makes `stop()` safe while a request or step delay is in flight.
+- [variables.ts](src/engine/variables.ts) — the `Variables` map, dotted-path resolution, and `{{placeholder}}` interpolation.
+
+### [src/store/runStore.ts](src/store/runStore.ts)
+
+A second, non-temporal Zustand store that owns run-time UI state: panel visibility, `status`, the chat transcript, current variables, the active / visited node ids, traversed edge ids, and the pending input descriptor. `startRun` builds a `FlowInterpreter` from the current flow store snapshot and reduces its events into state. It also subscribes to the flow store so edits during a run flip an `isStale` flag that the panel surfaces as a "restart" banner. Nothing here is undoable.
+
+### [src/components/RunPanel/RunPanel.tsx](src/components/RunPanel/RunPanel.tsx)
+
+The chat preview mounted beside the canvas while run mode is on. Renders bot / user bubbles and system notes (condition results, HTTP status lines, warnings), a collapsible variables inspector, and the reply box, which is only enabled while the interpreter is paused on an Input node. Clicking a bubble selects its source node.
 
 ### [src/hooks/useUndoRedo.ts](src/hooks/useUndoRedo.ts)
 
@@ -189,6 +204,37 @@ All subscribers re-render with the previous nodes/edges
 ```
 
 Only `nodes` and `edges` are tracked — selection and theme toggles don't create history entries, so undo never "steals" the user's current selection.
+
+### Running a flow
+
+```
+Toolbar "Run" ──▶ runStore.openRunMode ──▶ startRun
+                                              │ snapshot flowStore.nodes/edges
+                                              ▼
+                                    new FlowInterpreter(nodes, edges)
+                                              │ subscribe(handleEvent)
+                                              ▼
+                                    interpreter.start()  → enterNode(start)
+                                              │
+            ┌─────────────────────────────────┼──────────────────────────────┐
+            ▼                                 ▼                              ▼
+   Message / End                         Condition                       API Call
+   botMessage event              evaluateCondition(vars)         fetch(url, {method, headers, body})
+   advance('default')            advance('true' | 'false')       store response → advance('success' | 'failure')
+            │                                 │                              │
+            └─────────────────────────────────┼──────────────────────────────┘
+                                              ▼
+                                           Input
+                                   botMessage(prompt) + waitingForInput
+                                              │ status = waitingForInput (loop exits)
+                                              ▼
+                        RunPanel enables the reply box ──▶ runStore.submitInput(text)
+                                              │
+                                              ▼
+                        interpreter.submitInput: parseInput → variables[name] = value → advance → loop resumes
+```
+
+Every `enterNode` / `traverseEdge` event updates `activeNodeId`, `visitedNodeIds`, and `traversedEdgeIds` in the run store. `BaseNode` and `AnimatedEdge` read those to draw the pulsing highlight and the dashed green trail, and `FlowCanvas` pans to the active node only when it is outside the viewport.
 
 ### Export / import
 

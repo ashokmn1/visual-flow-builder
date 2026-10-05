@@ -7,6 +7,8 @@ import {
 import { IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useFlowStore } from '../../store/flowStore';
+import { useRunStore } from '../../store/runStore';
+import { START_COLOR } from '../../constants/nodeDefaults';
 
 const AnimatedEdge = ({
   id,
@@ -19,6 +21,9 @@ const AnimatedEdge = ({
   selected,
 }: EdgeProps) => {
   const onEdgesChange = useFlowStore((s) => s.onEdgesChange);
+  const traversed = useRunStore(
+    (s) => s.isRunMode && s.traversedEdgeIds.includes(id)
+  );
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -39,9 +44,10 @@ const AnimatedEdge = ({
       <BaseEdge
         id={id}
         path={edgePath}
+        className={traversed ? 'flow-edge--traversed' : undefined}
         style={{
-          stroke: selected ? '#3b82f6' : '#94a3b8',
-          strokeWidth: selected ? 2.5 : 1.5,
+          stroke: traversed ? START_COLOR : selected ? '#3b82f6' : '#94a3b8',
+          strokeWidth: traversed || selected ? 2.5 : 1.5,
           transition: 'stroke 0.2s, stroke-width 0.2s',
         }}
       />
