@@ -2,6 +2,8 @@
 
 A drag-and-drop visual editor for designing conversational and logic flows, built with React, TypeScript, and [@xyflow/react](https://reactflow.dev/).
 
+**Live demo:** [visual-flow-builder-mu.vercel.app](https://visual-flow-builder-mu.vercel.app)
+
 ## Screenshots
 
 | Light | Dark |
@@ -50,6 +52,8 @@ Then open the URL printed by Vite (typically http://localhost:5173).
 - `npm run test` — run the interpreter unit tests with Vitest
 
 ## Deployment
+
+The production build is hosted on Vercel at **https://visual-flow-builder-mu.vercel.app**.
 
 The app is a static Vite build and deploys to [Vercel](https://vercel.com) with zero server config. [vercel.json](vercel.json) pins the framework preset, rewrites all non-asset routes to `index.html` (SPA fallback), and sets immutable caching on hashed `/assets/*` files.
 
