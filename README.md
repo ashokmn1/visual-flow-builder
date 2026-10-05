@@ -2,6 +2,8 @@
 
 A drag-and-drop visual editor for designing conversational and logic flows, built with React, TypeScript, and [@xyflow/react](https://reactflow.dev/).
 
+**Live demo:** https://ashokmn1.github.io/visual-flow-builder/
+
 ## Screenshots
 
 | Light | Dark |
@@ -48,6 +50,14 @@ Then open the URL printed by Vite (typically http://localhost:5173).
 - `npm run preview` — preview the production build
 - `npm run lint` — run ESLint
 - `npm run test` — run the interpreter unit tests with Vitest
+
+## Deployment
+
+The app is a static site and deploys to GitHub Pages automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on every push to `main`.
+
+- The workflow builds with `GITHUB_PAGES=true`, which makes `vite.config.ts` set `base` to `/visual-flow-builder/` so assets resolve under the repository subpath. Local `dev` and `preview` are unaffected and serve from `/`.
+- One-time setup: in the repository settings, under **Pages**, set **Source** to **GitHub Actions**.
+- To build the Pages variant locally: `GITHUB_PAGES=true npm run build`
 
 ## Project Structure
 
