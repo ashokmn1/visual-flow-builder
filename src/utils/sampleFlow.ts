@@ -3,18 +3,13 @@ import type { FlowNode } from '../types/nodes';
 
 export const sampleNodes: FlowNode[] = [
   {
-    id: 'start-1',
-    type: 'start',
-    position: { x: 300, y: 0 },
-    data: { type: 'start', label: 'Start' },
-  },
-  {
     id: 'msg-1',
     type: 'message',
     position: { x: 270, y: 130 },
     data: {
       type: 'message',
       label: 'Welcome',
+      isStart: true,
       message: 'Hi! Welcome to our support. How can I help you today?',
     },
   },
@@ -79,13 +74,6 @@ export const sampleNodes: FlowNode[] = [
 ];
 
 export const sampleEdges: Edge[] = [
-  {
-    id: 'e-start-msg',
-    source: 'start-1',
-    target: 'msg-1',
-    sourceHandle: 'default',
-    type: 'animated',
-  },
   {
     id: 'e-msg-input',
     source: 'msg-1',

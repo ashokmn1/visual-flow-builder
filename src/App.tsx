@@ -21,6 +21,9 @@ const AppContent = () => {
   useEffect(() => {
     if (nodes.length === 0) {
       setFlow(sampleNodes, sampleEdges);
+      // The initial load is not an undoable action; otherwise Undo could
+      // roll back to an empty canvas with no Start node.
+      useFlowStore.temporal.getState().clear();
     }
   }, []);
 

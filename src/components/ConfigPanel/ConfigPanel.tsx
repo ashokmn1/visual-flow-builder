@@ -11,10 +11,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useFlowStore } from '../../store/flowStore';
 import { NODE_COLORS } from '../../constants/nodeDefaults';
 import type { NodeCategory } from '../../types/nodes';
+import StartHereToggle from './StartHereToggle';
 
 // Only one config panel is visible at a time, so each one is split into its
 // own chunk and fetched on first use.
-const StartConfig = lazy(() => import('./StartConfig'));
 const MessageConfig = lazy(() => import('./MessageConfig'));
 const ConditionConfig = lazy(() => import('./ConditionConfig'));
 const InputConfig = lazy(() => import('./InputConfig'));
@@ -41,8 +41,6 @@ const ConfigPanel = () => {
     if (!selectedNode) return null;
 
     switch (selectedNode.data.type) {
-      case 'start':
-        return <StartConfig node={selectedNode} />;
       case 'message':
         return <MessageConfig node={selectedNode} />;
       case 'condition':
@@ -101,7 +99,7 @@ const ConfigPanel = () => {
             {selectedNode?.data.type
               ? selectedNode.data.type.charAt(0).toUpperCase() +
                 selectedNode.data.type.slice(1)
-              : ''}
+              : ''}{' '}
             Node
           </Typography>
         </Box>
@@ -112,7 +110,17 @@ const ConfigPanel = () => {
 
       <Divider />
 
-      <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
+      <Box
+        sx={{
+          p: 2,
+          overflowY: 'auto',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        {selectedNode && <StartHereToggle node={selectedNode} />}
         <Suspense fallback={<ConfigFallback />}>{renderConfig()}</Suspense>
       </Box>
     </Drawer>

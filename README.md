@@ -10,10 +10,11 @@ A drag-and-drop visual editor for designing conversational and logic flows, buil
 
 ## Features
 
-- **Six node types** — Start, Message, Condition, Input, API Call, and End
+- **Five node types** — Message, Condition, Input, API Call, and End
+- **Start here chip** — any node can be marked as the flow's entry point from its config panel; exactly one node carries the chip and it cannot be deleted
 - **Drag-and-drop** node creation from a side palette onto the canvas
 - **Configurable nodes** — each node type exposes its own configuration panel
-- **Connection validation** — rules enforce valid edges (e.g., no connections into Start, branch limits per node type, no self-connections, no duplicates)
+- **Connection validation** — rules enforce valid edges (e.g., branch limits per node type, no self-connections, no duplicates)
 - **Animated edges** between connected nodes
 - **Undo / redo** with keyboard shortcuts (`Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z`), backed by [zundo](https://github.com/charkour/zundo)
 - **Export / import** flows as JSON
@@ -52,7 +53,7 @@ src/
   components/
     ConfigPanel/      Per-node configuration forms
     CustomEdges/      Animated edge component
-    CustomNodes/      Node components (Start, Message, Condition, Input, ApiCall, End)
+    CustomNodes/      Node components (Message, Condition, Input, ApiCall, End)
     FlowCanvas/       Main @xyflow/react canvas
     NodePalette/      Draggable node source list
     Toolbar/          App toolbar (undo/redo, import/export, theme)
@@ -67,12 +68,13 @@ src/
 
 | Node        | Purpose                              | Max outgoing |
 | ----------- | ------------------------------------ | ------------ |
-| Start       | Entry point of the flow              | 1            |
 | Message     | Display a message to the user        | 1            |
 | Condition   | Branch based on a variable check     | 2            |
 | Input       | Collect user input into a variable   | 1            |
 | API Call    | Perform an HTTP request              | 2            |
 | End         | Terminates the flow                  | 0            |
+
+The flow's entry point is not a separate node: one node carries a **Start here** chip, set via the toggle at the top of its config panel. The first node added to an empty canvas becomes the start automatically.
 
 Connection rules are defined in [src/utils/connectionRules.ts](src/utils/connectionRules.ts).
 

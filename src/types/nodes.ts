@@ -1,43 +1,39 @@
 import type { Node } from '@xyflow/react';
 
 export type NodeCategory =
-  | 'start'
   | 'message'
   | 'condition'
   | 'input'
   | 'apiCall'
   | 'end';
 
-export interface StartNodeData extends Record<string, unknown> {
-  type: 'start';
+interface BaseNodeData extends Record<string, unknown> {
   label: string;
+  /** Exactly one node in a flow carries the "Start here" chip. */
+  isStart?: boolean;
 }
 
-export interface MessageNodeData extends Record<string, unknown> {
+export interface MessageNodeData extends BaseNodeData {
   type: 'message';
-  label: string;
   message: string;
 }
 
-export interface ConditionNodeData extends Record<string, unknown> {
+export interface ConditionNodeData extends BaseNodeData {
   type: 'condition';
-  label: string;
   variable: string;
   operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'isEmpty';
   value: string;
 }
 
-export interface InputNodeData extends Record<string, unknown> {
+export interface InputNodeData extends BaseNodeData {
   type: 'input';
-  label: string;
   variableName: string;
   inputType: 'text' | 'number' | 'email' | 'phone';
   prompt: string;
 }
 
-export interface ApiCallNodeData extends Record<string, unknown> {
+export interface ApiCallNodeData extends BaseNodeData {
   type: 'apiCall';
-  label: string;
   url: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers: string;
@@ -45,14 +41,12 @@ export interface ApiCallNodeData extends Record<string, unknown> {
   responseVariable: string;
 }
 
-export interface EndNodeData extends Record<string, unknown> {
+export interface EndNodeData extends BaseNodeData {
   type: 'end';
-  label: string;
   endMessage: string;
 }
 
 export type FlowNodeData =
-  | StartNodeData
   | MessageNodeData
   | ConditionNodeData
   | InputNodeData
