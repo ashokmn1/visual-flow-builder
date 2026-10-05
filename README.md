@@ -11,6 +11,8 @@ A drag-and-drop visual editor for designing conversational and logic flows, buil
 ## Features
 
 - **Five node types** — Message, Condition, Input, API Call, and End
+- **Run mode** — press **Run** to execute the flow in a chat preview beside the canvas: the interpreter starts at the "Start here" node, walks edges, evaluates Condition nodes, pauses on Input nodes for your reply, and fires real HTTP requests for API Call nodes. The active node pulses on the canvas and walked edges light up as execution moves
+- **Variables and templating** — Input replies and API responses are stored as variables; `{{variable}}` and `{{response.nested.field}}` placeholders are interpolated in messages, prompts, URLs, headers, and bodies
 - **Start here chip** — any node can be marked as the flow's entry point from its config panel; exactly one node carries the chip and it cannot be deleted
 - **Drag-and-drop** node creation from a side palette onto the canvas
 - **Configurable nodes** — each node type exposes its own configuration panel
@@ -45,6 +47,7 @@ Then open the URL printed by Vite (typically http://localhost:5173).
 - `npm run build` — type-check and build for production
 - `npm run preview` — preview the production build
 - `npm run lint` — run ESLint
+- `npm run test` — run the interpreter unit tests with Vitest
 
 ## Project Structure
 
@@ -56,10 +59,12 @@ src/
     CustomNodes/      Node components (Message, Condition, Input, ApiCall, End)
     FlowCanvas/       Main @xyflow/react canvas
     NodePalette/      Draggable node source list
-    Toolbar/          App toolbar (undo/redo, import/export, theme)
+    RunPanel/         Chat preview shown in Run mode
+    Toolbar/          App toolbar (undo/redo, import/export, run, theme)
   constants/          Node default data
+  engine/             Flow interpreter (pure, UI-free) and variable interpolation
   hooks/              useUndoRedo, useExportImport
-  store/              Zustand + zundo flow store
+  store/              Zustand + zundo flow store, run store
   types/              Node data types
   utils/              Connection rules, ID generation, sample flow
 ```
@@ -77,6 +82,22 @@ src/
 The flow's entry point is not a separate node: one node carries a **Start here** chip, set via the toggle at the top of its config panel. The first node added to an empty canvas becomes the start automatically.
 
 Connection rules are defined in [src/utils/connectionRules.ts](src/utils/connectionRules.ts).
+
+## Run Mode
+
+Click **Run** in the toolbar to open the chat preview. The interpreter in [src/engine/interpreter.ts](src/engine/interpreter.ts) executes a snapshot of the canvas:
+
+| Node      | Behaviour during a run                                                                                                  |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Message   | Sends the (interpolated) text as a bot bubble, then follows its single edge                                              |
+| Input     | Sends the prompt and pauses. Your reply is validated by input type (text / number / email / phone) and stored in the variable |
+| Condition | Resolves the variable (dot paths allowed), applies the operator, and follows the `True` or `False` edge                 |
+| API Call  | Performs a real `fetch` with interpolated URL / headers / body, stores the JSON (or text) response, and follows `Success` or `Failure` |
+| End       | Sends the end message and finishes the run                                                                              |
+
+Condition checks are case-insensitive for `equals` / `contains` and numeric for `greaterThan` / `lessThan`. A node with no outgoing edge on the chosen branch ends the run with a note; runaway loops stop after 200 steps. Edits made on the canvas while a run is open show a "flow changed" banner with a restart shortcut. Click any bubble in the preview to select the node that produced it.
+
+Browsers only allow API Call nodes to reach servers that send CORS headers; a blocked request takes the `Failure` branch with an explanation.
 
 ## Architecture
 

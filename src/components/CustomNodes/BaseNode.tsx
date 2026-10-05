@@ -1,12 +1,13 @@
 import { type ReactNode } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { IconButton, Tooltip } from '@mui/material';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { NODE_COLORS, START_COLOR } from '../../constants/nodeDefaults';
 import type { NodeCategory } from '../../types/nodes';
 import { useFlowStore } from '../../store/flowStore';
+import { useRunStore } from '../../store/runStore';
 
 interface BaseNodeProps {
   id: string;
@@ -19,9 +20,25 @@ interface BaseNodeProps {
   sourceHandles?: { id: string; label: string; position?: 'left' | 'right' | 'center' }[];
 }
 
-const NodeWrapper = styled.div<{ $color: string; $selected: boolean }>`
+type RunHighlight = 'none' | 'visited' | 'active';
+
+const pulse = keyframes`
+  0% { box-shadow: 0 0 0 0 ${START_COLOR}99, 0 4px 16px rgba(0,0,0,0.18); }
+  70% { box-shadow: 0 0 0 12px ${START_COLOR}00, 0 4px 16px rgba(0,0,0,0.18); }
+  100% { box-shadow: 0 0 0 0 ${START_COLOR}00, 0 4px 16px rgba(0,0,0,0.18); }
+`;
+
+const NodeWrapper = styled.div<{ $color: string; $selected: boolean; $run: RunHighlight }>`
   background: var(--node-bg, #ffffff);
-  border: 2px solid ${(p) => (p.$selected ? p.$color : 'var(--node-border, #e2e8f0)')};
+  border: 2px solid
+    ${(p) =>
+      p.$run === 'active'
+        ? START_COLOR
+        : p.$selected
+          ? p.$color
+          : p.$run === 'visited'
+            ? `${START_COLOR}99`
+            : 'var(--node-border, #e2e8f0)'};
   border-radius: 10px;
   min-width: 200px;
   max-width: 240px;
@@ -35,6 +52,31 @@ const NodeWrapper = styled.div<{ $color: string; $selected: boolean }>`
   &:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
+
+  ${(p) =>
+    p.$run === 'active' &&
+    css`
+      animation: ${pulse} 1.4s ease-out infinite;
+      &:hover {
+        animation: ${pulse} 1.4s ease-out infinite;
+      }
+    `}
+`;
+
+const RunBadge = styled.div`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: ${START_COLOR};
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
 `;
 
 const NodeHeader = styled.div<{ $color: string }>`
@@ -108,6 +150,15 @@ const BaseNode = ({
   const isStart = useFlowStore(
     (s) => s.nodes.find((n) => n.id === id)?.data.isStart === true
   );
+  const runHighlight = useRunStore<RunHighlight>((s) =>
+    !s.isRunMode
+      ? 'none'
+      : s.activeNodeId === id
+        ? 'active'
+        : s.visitedNodeIds.includes(id)
+          ? 'visited'
+          : 'none'
+  );
 
   const getHandleLeft = (position?: string, index?: number, total?: number) => {
     if (total && total > 1 && index !== undefined) {
@@ -124,7 +175,12 @@ const BaseNode = ({
   };
 
   return (
-    <NodeWrapper $color={color} $selected={selected}>
+    <NodeWrapper $color={color} $selected={selected} $run={runHighlight}>
+      {runHighlight === 'active' && (
+        <RunBadge aria-label="Currently executing">
+          <PlayArrowIcon sx={{ fontSize: 14 }} />
+        </RunBadge>
+      )}
       {isStart && (
         <StartChip>
           <PlayArrowIcon sx={{ fontSize: 12 }} />

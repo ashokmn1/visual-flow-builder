@@ -39,6 +39,39 @@ body {
   border-radius: 6px;
 }
 
+/* The custom "input" node type shares its name with React Flow's built-in
+   input node, which ships a white box with a border. React Flow's stylesheet
+   loads after this file, so the selectors below carry extra specificity. */
+.react-flow__node.react-flow__node-input {
+  padding: 0;
+  width: auto;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  text-align: left;
+  font-size: inherit;
+  color: inherit;
+}
+
+.react-flow__node.react-flow__node-input.selectable:hover,
+.react-flow__node.react-flow__node-input.selectable.selected,
+.react-flow__node.react-flow__node-input.selectable:focus,
+.react-flow__node.react-flow__node-input.selectable:focus-visible {
+  box-shadow: none;
+}
+
+/* Edges the interpreter has walked during a run */
+.react-flow__edge-path.flow-edge--traversed {
+  stroke-dasharray: 6 4;
+  animation: flow-edge-dash 0.7s linear infinite;
+}
+
+@keyframes flow-edge-dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
 /* Styled-components CSS variables for node theming */
 :root {
   --node-bg: #ffffff;
